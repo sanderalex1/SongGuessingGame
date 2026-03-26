@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-// import router from "./routes/auth.js";
+import router from "./routes/auth.js";
 import type { Request, Response, NextFunction } from "express";
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(
 );
 app.use(express.json());
 
-// app.use("/api/v1/", router);
+app.use("/api/v1/", router);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err) {

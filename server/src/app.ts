@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import router from "./routes/auth.js";
 import type { Request, Response, NextFunction } from "express";
-
+import { userCheck } from "./middleware/authGuard.js";
 const app = express();
 
 app.use(
@@ -14,6 +14,10 @@ app.use(
 app.use(express.json());
 
 app.use("/api/v1/", router);
+
+app.get("/api/v1/protected", userCheck, (req: Request, res: Response) => {
+  res.json({ message: "You are authenticated!", userId: req.userId });
+});
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err) {

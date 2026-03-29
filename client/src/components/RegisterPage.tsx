@@ -12,7 +12,7 @@ import { MusicNote } from "@mui/icons-material";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 
-const Register: React.FC = () => {
+const Register = () => {
   const [username, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");

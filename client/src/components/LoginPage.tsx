@@ -29,7 +29,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/");
+      // navigate("/");
     } catch {
       console.log(error);
     }

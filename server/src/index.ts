@@ -14,14 +14,6 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  socket.on("ping:send", (data) => {
-    console.log("Received ping:", data);
-    socket.emit("pong:receive", {
-      message: "Hello from server!",
-      yourData: data,
-    });
-  });
-
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });

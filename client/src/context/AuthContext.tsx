@@ -1,95 +1,48 @@
-import { createContext, useContext, useState } from "react";
-import { useLocalStorage } from "../hooks/useLocalStorage";
-import type { AuthContextType, AuthProviderProps, User } from "../types";
-import * as api from "../api/authAPI";
+import React, { createContext, useContext, useState } from 'react';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface User {
+  id: string;
+  username: string;
+  email?: string;
+  isGuest: boolean;
+}
 
-export const useAuthContext = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
-  }
-  return context;
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => void;
+  register: (username: string, email: string, password: string) => void;
+  loginAsGuest: (username: string) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useLocalStorage<string | null>("token", null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const register = async (
-    username: string,
-    email: string,
-    password: string,
-  ) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      const newUser = await api.createUser(username, email, password);
-      setUser(newUser.user);
-      setToken(newUser.token);
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      }
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const login = async (email: string, password: string) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      const user = await api.loginUser(email, password);
-      setUser(user.user);
-      setToken(user.token);
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      }
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const guestLogin = async (username: string) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      const guest = await api.createGuest(username);
-      setUser(guest.user);
-      setToken(guest.token);
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      }
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const logout = () => {
-    setUser(null);
-    setToken(null);
+  const login = (email: string, _password: string) => {
+    setUser({ id: crypto.randomUUID(), username: email.split('@')[0], email, isGuest: false });
   };
 
-  const value: AuthContextType = {
-    static: {
-      user,
-      token,
-      error,
-      isLoading,
-    },
-    action: {
-      register,
-      login,
-      guestLogin,
-      logout,
-    },
+  const register = (username: string, email: string, _password: string) => {
+    setUser({ id: crypto.randomUUID(), username, email, isGuest: false });
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const loginAsGuest = (username: string) => {
+    setUser({ id: crypto.randomUUID(), username, isGuest: true });
+  };
+
+  const logout = () => setUser(null);
+
+  return (
+    <AuthContext.Provider value={{ user, login, register, loginAsGuest, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

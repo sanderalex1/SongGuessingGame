@@ -1,6 +1,8 @@
 import type { Server } from "socket.io";
 import * as roomManager from "./roomManager.js";
+import { GameEngine } from "./gameEngine.js";
 
+const games = new Map<string, GameEngine>();
 export const setupSocket = (io: Server) => {
   io.on("connection", (socket) => {
     console.log("Connected:", socket.id);
@@ -36,6 +38,27 @@ export const setupSocket = (io: Server) => {
 
     socket.on("disconnect", () => {
       console.log("Disconnected:", socket.id);
+    });
+
+    socket.on("game:start", (data) => {
+      const lobby = roomManager.getRoom(data.code);
+      if (!lobby) return;
+
+      const game = new GameEngine(
+        io,
+        lobby.code,
+        lobby.players,
+        lobby.settings,
+      );
+      games.set(lobby.code, game);
+      game.startGame();
+    });
+
+    socket.on("game:guess", (data) => {
+      const game = games.get(data.code);
+      if (!game) return;
+
+      game.submitGuess(data.userId, data.guess);
     });
   });
 };

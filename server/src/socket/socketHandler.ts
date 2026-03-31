@@ -42,8 +42,10 @@ export const setupSocket = (io: Server) => {
 
     socket.on("game:start", (data) => {
       const lobby = roomManager.getRoom(data.code);
+
       if (!lobby) return;
 
+      lobby.status = "playing";
       const game = new GameEngine(
         io,
         lobby.code,

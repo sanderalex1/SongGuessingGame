@@ -6,7 +6,10 @@ import type { player, settings } from "../types/roomTypes.js";
 export class GameEngine {
   private roomCode: string;
   private songs: Song[]; // fetched from DB at start
-  private players: Map<string, { score: number; guessedThisRound: boolean }>;
+  private players: Map<
+    string,
+    { score: number; guessedThisRound: boolean; correctGuesses: number }
+  >;
   private currentRound: number;
   private totalRounds: number;
   private clipDuration: number;
@@ -30,7 +33,11 @@ export class GameEngine {
     this.timeLeft = 0;
     this.players = new Map();
     for (const p of playerList) {
-      this.players.set(p.userId, { score: 0, guessedThisRound: false });
+      this.players.set(p.userId, {
+        score: 0,
+        guessedThisRound: false,
+        correctGuesses: 0,
+      });
     }
   }
 
@@ -76,6 +83,7 @@ export class GameEngine {
       playerData.guessedThisRound = true;
       if (correctGuess) {
         playerData.score += score;
+        playerData.correctGuesses++;
       }
       const points = correctGuess ? score : 0;
       this.io

@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db/pool.js";
-
+import { AppError } from "../middleware/AppError.js";
 // Creating a user with a hashed password
 export const createUser = async (
   username: string,
@@ -34,14 +34,14 @@ export const verifyUser = async (email: string, password: string) => {
   );
 
   if (result.rows.length === 0) {
-    throw new Error("User not found!");
+    throw new AppError("User not found!", 401);
   }
 
   const user = result.rows[0];
   const isValid = await bcrypt.compare(password, user.password_hash);
 
   if (!isValid) {
-    throw new Error("Invalid password");
+    throw new AppError("Invalid password", 401);
   }
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "7d",

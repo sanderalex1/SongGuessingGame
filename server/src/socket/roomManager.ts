@@ -68,3 +68,9 @@ export const getRoom = (code: string) => {
   const room = rooms.get(code);
   return room;
 };
+
+export const getAllRooms = () => {
+  const allRooms = Array.from(rooms.values());
+  const waitingRooms = allRooms.filter((room) => room.status === "waiting");
+  return waitingRooms;
+};

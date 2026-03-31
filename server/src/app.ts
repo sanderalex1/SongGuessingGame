@@ -1,9 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import router from "./routes/auth.js";
 import type { Request, Response, NextFunction } from "express";
 import { userCheck } from "./middleware/authGuard.js";
+import authRouter from "./routes/auth.js";
 const app = express();
 
 app.use(
@@ -13,7 +13,7 @@ app.use(
 );
 app.use(express.json());
 
-app.use("/api/v1/", router);
+app.use("/api/v1/", authRouter);
 
 app.get("/api/v1/protected", userCheck, (req: Request, res: Response) => {
   res.json({ message: "You are authenticated!", userId: req.userId });

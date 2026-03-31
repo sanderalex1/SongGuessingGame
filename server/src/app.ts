@@ -7,6 +7,7 @@ import authRouter from "./routes/auth.js";
 import roomRouter from "./routes/room.js";
 import { asyncHandler } from "./middleware/asyncHandler.js";
 import { AppError } from "./middleware/AppError.js";
+import songRouter from "./routes/song.js";
 const app = express();
 
 app.use(
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use("/api/v1/", authRouter);
 app.use("/api/v1/", roomRouter);
+app.use("/api/v1/", songRouter);
 
 app.get("/api/v1/protected", userCheck, (req: Request, res: Response) => {
   res.json({ message: "You are authenticated!", userId: req.userId });

@@ -16,7 +16,8 @@ CREATE TABLE songs (
     genre VARCHAR(100),
     preview_url TEXT NOT NULL,
     year INTEGER,
-    difficulty VARCHAR(20) NOT NULL
+    difficulty VARCHAR(20) NOT NULL,
+    deezer_id BIGINT
 );
 
 CREATE TABLE game_sessions (

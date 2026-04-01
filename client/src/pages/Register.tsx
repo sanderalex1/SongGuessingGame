@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Card, CardContent, Typography, TextField, Button, Link as MuiLink,
+  Snackbar, Alert,
 } from '@mui/material';
 import { MusicNote } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
@@ -11,14 +12,23 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const { register } = useAuth();
+  const [toast, setToast] = useState<string | null>(null);
+  const { static: { error, isLoading }, action: { register } } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (error) setToast(error);
+  }, [error]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) return;
-    register(username, email, password);
-    navigate('/');
+    try {
+      await register(username, email, password);
+      navigate('/');
+    } catch {
+      // toast handles it
+    }
   };
 
   return (
@@ -45,8 +55,8 @@ const Register: React.FC = () => {
               error={confirm.length > 0 && password !== confirm}
               helperText={confirm.length > 0 && password !== confirm ? 'Passwords do not match' : ''}
             />
-            <Button type="submit" variant="contained" size="large" fullWidth disabled={password !== confirm || !password}>
-              Create Account
+            <Button type="submit" variant="contained" size="large" fullWidth disabled={password !== confirm || !password || isLoading}>
+              {isLoading ? 'Creating...' : 'Create Account'}
             </Button>
 
             <Typography variant="body2" textAlign="center" color="text.secondary">
@@ -58,6 +68,25 @@ const Register: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={7000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setToast(null)}
+          severity="error"
+          variant="filled"
+          elevation={6}
+          sx={{ minWidth: 280 }}
+        >
+          {toast}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
+
+export default Register;

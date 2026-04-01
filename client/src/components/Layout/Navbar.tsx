@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 
 const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { static: { user }, action: { logout } } = useAuth();
   const { mode, toggleTheme } = useThemeMode();
   const navigate = useNavigate();
 
@@ -56,10 +56,25 @@ const Navbar: React.FC = () => {
               </IconButton>
             </>
           ) : (
-            <Button variant="contained" color="primary" onClick={() => navigate('/login')}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/login')}
+              sx={{
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: 'secondary.main',
+                  backgroundColor: 'rgba(212, 160, 23, 0.08)',
+                },
+              }}
+            >
               Sign In
             </Button>
           )}
         </Box>
       </Toolbar>
     </AppBar>
+  );
+};
+
+export default Navbar;

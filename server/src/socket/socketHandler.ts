@@ -3,12 +3,24 @@ import * as roomManager from "./roomManager.js";
 import { GameEngine } from "./gameEngine.js";
 
 const games = new Map<string, GameEngine>();
+const onlineUsers = new Map<string, { userId: string; username: string }>();
+
+function broadcastOnlineUsers(io: Server) {
+  const users = Array.from(onlineUsers.values());
+  io.emit("users:online", users);
+}
+
 export const setupSocket = (io: Server) => {
   io.on("connection", (socket) => {
     console.log("Connected:", socket.id);
 
+    socket.on("user:register", (data: { userId: string; username: string }) => {
+      onlineUsers.set(socket.id, { userId: data.userId, username: data.username });
+      broadcastOnlineUsers(io);
+    });
+
     socket.on("room:create", (data) => {
-      const room = roomManager.createRoom(data.id, data.username);
+      const room = roomManager.createRoom(data.id, data.username, data.code, data.settings);
 
       socket.join(room.code);
 
@@ -38,6 +50,8 @@ export const setupSocket = (io: Server) => {
 
     socket.on("disconnect", () => {
       console.log("Disconnected:", socket.id);
+      onlineUsers.delete(socket.id);
+      broadcastOnlineUsers(io);
     });
 
     socket.on("game:start", (data) => {

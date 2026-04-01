@@ -6,4 +6,5 @@ export type Song = {
   preview_url: string;
   year?: number;
   difficulty: string;
+  deezer_id?: number;
 };

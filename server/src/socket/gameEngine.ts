@@ -2,10 +2,28 @@ import type { Server } from "socket.io";
 import * as songService from "../services/song.js";
 import type { Song } from "../types/gameEngineTypes.js";
 import type { player, settings } from "../types/roomTypes.js";
+import { calculateScore } from "../utils/scoring.js";
+
+/**
+ * Fetch a fresh preview URL from the Deezer API for a given track.
+ * Falls back to the stored (possibly expired) URL on failure.
+ */
+async function freshPreviewUrl(song: Song): Promise<string> {
+  if (!song.deezer_id) return song.preview_url;
+  try {
+    const res = await fetch(`https://api.deezer.com/track/${song.deezer_id}`);
+    if (!res.ok) return song.preview_url;
+    const data = await res.json();
+    return data.preview || song.preview_url;
+  } catch {
+    return song.preview_url;
+  }
+}
 
 export class GameEngine {
   private roomCode: string;
-  private songs: Song[]; // fetched from DB at start
+  private songs: Song[];
+  private freshUrls: Map<number, string>; // roundIndex -> fresh URL
   private players: Map<
     string,
     { score: number; guessedThisRound: boolean; correctGuesses: number }
@@ -26,6 +44,7 @@ export class GameEngine {
     this.io = io;
     this.roomCode = roomCode;
     this.songs = [];
+    this.freshUrls = new Map();
     this.currentRound = 0;
     this.totalRounds = settings.rounds;
     this.clipDuration = settings.clipDuration;
@@ -43,16 +62,25 @@ export class GameEngine {
 
   async startGame() {
     this.songs = await songService.getRandomSong(String(this.totalRounds));
+
+    // Pre-fetch fresh Deezer preview URLs for all rounds
+    const urlPromises = this.songs.map((song, i) =>
+      freshPreviewUrl(song).then((url) => this.freshUrls.set(i, url)),
+    );
+    await Promise.all(urlPromises);
+
     this.startRound();
-  } // fetch songs, call startRound
+  }
 
   startRound() {
     const roundNum = ++this.currentRound;
-    const currentSong = this.songs[this.currentRound - 1];
-    const songUrl = currentSong?.preview_url;
+    const songUrl = this.freshUrls.get(this.currentRound - 1) ?? this.songs[this.currentRound - 1]?.preview_url;
     const duration = this.clipDuration;
     this.players.forEach((playerData) => (playerData.guessedThisRound = false));
     this.timeLeft = duration;
+
+    console.log(`[GameEngine] Round ${roundNum} — songUrl: ${songUrl?.substring(0, 80)}...`);
+
     this.io
       .to(this.roomCode)
       .emit("game:round-start", { roundNum, songUrl, duration });
@@ -66,36 +94,46 @@ export class GameEngine {
         this.endRound();
       }
     }, 1000);
-  } // emit round-start, begin timer
+  }
 
   submitGuess(userId: string, guess: string) {
     const playerData = this.players.get(userId);
     if (playerData) {
       const currentSong = this.songs[this.currentRound - 1];
-      const score = Math.round(1000 * (this.timeLeft / this.clipDuration));
-      const correctGuess =
-        currentSong?.artist.trim().toLowerCase() ===
-          guess.trim().toLowerCase() ||
-        currentSong?.title.trim().toLowerCase() === guess.trim().toLowerCase();
 
       if (playerData.guessedThisRound === true) return null;
 
       playerData.guessedThisRound = true;
-      if (correctGuess) {
-        playerData.score += score;
+
+      const result = calculateScore(
+        currentSong?.title ?? "",
+        currentSong?.artist ?? "",
+        guess,
+        this.timeLeft,
+        this.clipDuration,
+      );
+
+      if (result.points > 0) {
+        playerData.score += result.points;
+      }
+      if (result.accuracy >= 1.0 || result.artistMatch) {
         playerData.correctGuesses++;
       }
-      const points = correctGuess ? score : 0;
-      this.io
-        .to(this.roomCode)
-        .emit("game:guess-result", { userId, correct: correctGuess, points });
+
+      this.io.to(this.roomCode).emit("game:guess-result", {
+        userId,
+        correct: result.accuracy >= 1.0 || result.artistMatch,
+        accuracy: result.accuracy,
+        artistMatch: result.artistMatch,
+        points: result.points,
+      });
     }
     let allGuessed = true;
     this.players.forEach((p) => {
       if (!p.guessedThisRound) allGuessed = false;
     });
     if (allGuessed) this.endRound();
-  } // validate, score, check if round done
+  }
 
   endRound() {
     clearInterval(this.timer!);
@@ -117,7 +155,7 @@ export class GameEngine {
     } else {
       setTimeout(() => this.startRound(), 3000);
     }
-  } // emit round-end, start next or finish
+  }
 
   endGame() {
     const finalScores: { userId: string; score: number }[] = [];
@@ -130,5 +168,5 @@ export class GameEngine {
       rank: index + 1,
     }));
     this.io.to(this.roomCode).emit("game:finished", { finalScores: ranked });
-  } // emit finished, save to DB
+  }
 }

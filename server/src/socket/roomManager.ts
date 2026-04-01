@@ -8,15 +8,16 @@ function generateCode(): string {
 }
 
 //returns room with defalut seettings and status waiting
-export const createRoom = (hostId: string, username: string): Room => {
-  const defaultSettings: settings = { rounds: 5, clipDuration: 15 };
+export const createRoom = (hostId: string, username: string, requestedCode?: string, settings?: Partial<settings>): Room => {
+  const defaultSettings: settings = { rounds: settings?.rounds ?? 5, clipDuration: settings?.clipDuration ?? 15 };
   const player: player = {
     userId: hostId,
     username: username,
   };
 
+  const code = requestedCode || generateCode();
   const room = {
-    code: generateCode(),
+    code,
     hostId: hostId,
     players: [player],
     settings: defaultSettings,

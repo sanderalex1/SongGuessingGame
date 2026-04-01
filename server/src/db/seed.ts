@@ -18,8 +18,8 @@ const seedSongs = async () => {
 
     for (const song of data.data.slice(0, 5)) {
       await pool.query(
-        `INSERT INTO songs (id, title, artist, preview_url, difficulty)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO songs (id, title, artist, preview_url, difficulty, deezer_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT DO NOTHING`,
         [
           crypto.randomUUID(),
@@ -27,6 +27,7 @@ const seedSongs = async () => {
           artist.artist,
           song.preview,
           artist.difficulty,
+          song.id,
         ],
       );
     }

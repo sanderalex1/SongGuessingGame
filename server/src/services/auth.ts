@@ -2,6 +2,20 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db/pool.js";
 import { AppError } from "../middleware/AppError.js";
+
+const ACCESS_EXPIRY = "7m";
+const REFRESH_EXPIRY = "7d";
+
+function generateTokens(userId: string) {
+  const token = jwt.sign({ userId }, process.env.JWT_SECRET!, {
+    expiresIn: ACCESS_EXPIRY,
+  });
+  const refreshToken = jwt.sign({ userId, type: "refresh" }, process.env.JWT_SECRET!, {
+    expiresIn: REFRESH_EXPIRY,
+  });
+  return { token, refreshToken };
+}
+
 // Creating a user with a hashed password
 export const createUser = async (
   username: string,
@@ -19,11 +33,8 @@ export const createUser = async (
   );
 
   const user = result.rows[0];
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-    expiresIn: "7d",
-  });
-
-  return { user, token };
+  const { token, refreshToken } = generateTokens(user.id);
+  return { user, token, refreshToken };
 };
 
 // Verifying credentials and returning a token
@@ -43,13 +54,12 @@ export const verifyUser = async (email: string, password: string) => {
   if (!isValid) {
     throw new AppError("Invalid password", 401);
   }
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-    expiresIn: "7d",
-  });
 
+  const { token, refreshToken } = generateTokens(user.id);
   return {
     user: { id: user.id, username: user.username, email: user.email },
     token,
+    refreshToken,
   };
 };
 
@@ -66,8 +76,26 @@ export const createGuest = async (guestName: string) => {
   );
 
   const guest = result.rows[0];
-  const token = jwt.sign({ userId: guest.id }, process.env.JWT_SECRET!, {
-    expiresIn: "1d",
-  });
-  return { user: guest, token };
+  const { token, refreshToken } = generateTokens(guest.id);
+  return { user: guest, token, refreshToken };
+};
+
+// Refresh access token using a valid refresh token
+export const refreshAccessToken = (currentRefreshToken: string) => {
+  try {
+    const decoded = jwt.verify(currentRefreshToken, process.env.JWT_SECRET!) as {
+      userId: string;
+      type?: string;
+    };
+
+    if (decoded.type !== "refresh") {
+      throw new AppError("Invalid token type", 401);
+    }
+
+    const { token, refreshToken } = generateTokens(decoded.userId);
+    return { accessToken: token, refreshToken };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError("Invalid or expired refresh token", 401);
+  }
 };

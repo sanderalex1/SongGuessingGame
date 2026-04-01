@@ -2,7 +2,7 @@
 
 A real-time multiplayer song guessing game. Players join rooms, listen to song previews from Deezer, and compete to guess the correct title.
 
-![Home page](../home-above-fold.png)
+![Home page](home-above-fold.png)
 
 ## Tech Stack
 

@@ -7,6 +7,12 @@ const ARTISTS = [
   { artist: "The Beatles", difficulty: "easy" },
   { artist: "The Weeknd", difficulty: "easy" },
   { artist: "Post Malone", difficulty: "medium" },
+  { artist: "Justin Bieber", difficulty: "easy" },
+  { artist: "ONE OK ROCK", difficulty: "medium" },
+  { artist: "Charlie Puth", difficulty: "medium" },
+  { artist: "Avril Lavigne", difficulty: "easy" },
+  { artist: "Lady Gaga", difficulty: "easy" },
+  { artist: "Eminem", difficulty: "easy" },
 ];
 
 const seedSongs = async () => {

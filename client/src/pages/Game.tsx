@@ -72,6 +72,7 @@ const Game: React.FC = () => {
   const [volume, setVolume] = useState(70);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const guessInputRef = useRef<HTMLInputElement>(null);
   // The server assigns its own room code; store it here so all emits use it.
   const roomCodeRef = useRef<string>(code || '');
 
@@ -81,6 +82,13 @@ const Game: React.FC = () => {
       audioRef.current.volume = volume / 100;
     }
   }, [volume]);
+
+  // Autofocus guess input when round starts
+  useEffect(() => {
+    if (phase === 'playing' && !submitted) {
+      guessInputRef.current?.focus();
+    }
+  }, [phase, submitted]);
 
   // Join / create room on mount
   useEffect(() => {
@@ -139,6 +147,7 @@ const Game: React.FC = () => {
         audioRef.current.src = data.songUrl;
         audioRef.current.play().catch(() => {});
       }
+
     };
 
     const onTimerTick = (time: number) => {
@@ -367,6 +376,7 @@ const Game: React.FC = () => {
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
                   disabled={submitted}
+                  inputRef={guessInputRef}
                 />
                 <Button variant="contained" onClick={handleSubmitGuess} disabled={submitted || !guess.trim()} endIcon={<Send />}>
                   Guess

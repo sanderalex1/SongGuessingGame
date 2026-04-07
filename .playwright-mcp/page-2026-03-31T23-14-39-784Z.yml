@@ -1,0 +1,48 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+        - heading "SoundGuess" [level=6] [ref=e8]
+      - generic [ref=e9]:
+        - button [ref=e10] [cursor=pointer]:
+          - img [ref=e11]
+        - button "Sign In" [ref=e13] [cursor=pointer]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - heading "Guess" [level=1] [ref=e18]
+          - paragraph [ref=e19]: find
+        - generic [ref=e20]:
+          - heading "The" [level=1] [ref=e21]
+          - paragraph [ref=e22]: your
+        - generic [ref=e23]:
+          - heading "Song" [level=1] [ref=e24]
+          - paragraph [ref=e25]: sound
+      - img [ref=e27]:
+        - generic [ref=e31]: SoundGuess Mix Vol. 1
+        - generic [ref=e32]: 60 min -- HIGH QUALITY
+        - generic [ref=e33]: GUESS THE SONG
+        - generic [ref=e45]: C-60
+      - generic [ref=e46]:
+        - button "Join a game" [ref=e47] [cursor=pointer]
+        - button "Create a game" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - heading "How It Works" [level=4] [ref=e50]
+      - generic [ref=e51]:
+        - generic [ref=e54]:
+          - img [ref=e56]
+          - generic [ref=e59]: Step 1
+          - heading "Join or Create" [level=6] [ref=e60]
+          - paragraph [ref=e61]: Create a room or join with a code
+        - generic [ref=e64]:
+          - img [ref=e66]
+          - generic [ref=e69]: Step 2
+          - heading "Listen" [level=6] [ref=e70]
+          - paragraph [ref=e71]: A short audio clip plays for everyone
+        - generic [ref=e74]:
+          - img [ref=e76]
+          - generic [ref=e79]: Step 3
+          - heading "Guess & Win" [level=6] [ref=e80]
+          - paragraph [ref=e81]: Type your guess -- speed earns more points

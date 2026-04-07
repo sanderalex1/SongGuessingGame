@@ -108,6 +108,13 @@ const Game: React.FC = () => {
     }
   }, [volume]);
 
+  // Autofocus guess input when round starts
+  useEffect(() => {
+    if (phase === 'playing' && !submitted) {
+      guessInputRef.current?.focus();
+    }
+  }, [phase, submitted]);
+
   // Join / create room on mount
   useEffect(() => {
     if (!socket || !user || !code) return;
@@ -202,6 +209,7 @@ const Game: React.FC = () => {
         console.warn('[Game] No songUrl received or no audio element');
         setAudioError('No audio URL received from server. Is the database seeded?');
       }
+
     };
 
     const onTimerTick = (time: number) => {
@@ -430,6 +438,7 @@ const Game: React.FC = () => {
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
                   disabled={submitted}
+                  inputRef={guessInputRef}
                 />
                 <Button variant="contained" onClick={handleSubmitGuess} disabled={submitted || !guess.trim()} endIcon={<Send />}>
                   Guess

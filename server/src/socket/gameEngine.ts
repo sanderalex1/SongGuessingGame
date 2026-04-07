@@ -151,7 +151,7 @@ export class GameEngine {
       .emit("game:round-end", { answer: { title, artist }, scores });
 
     if (this.currentRound >= this.totalRounds) {
-      this.endGame();
+      setTimeout(() => this.endGame(), 3000);
     } else {
       setTimeout(() => this.startRound(), 3000);
     }

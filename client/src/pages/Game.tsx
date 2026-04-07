@@ -70,11 +70,36 @@ const Game: React.FC = () => {
   const [answer, setAnswer] = useState<{ title: string; artist: string } | null>(null);
   const [lastResult, setLastResult] = useState<{ correct: boolean; accuracy: number; artistMatch: boolean; points: number } | null>(null);
   const [volume, setVolume] = useState(70);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const guessInputRef = useRef<HTMLInputElement>(null);
+  const audioUnlocked = useRef(false);
   // The server assigns its own room code; store it here so all emits use it.
   const roomCodeRef = useRef<string>(code || '');
+
+  // Unlock audio on first user interaction (needed for all players, not just host)
+  useEffect(() => {
+    const unlock = () => {
+      if (audioUnlocked.current || !audioRef.current) return;
+      const audio = audioRef.current;
+      // Play a tiny silent WAV to unlock the audio context
+      audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+      audio.play()
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audioUnlocked.current = true;
+          console.log('[Game] Audio context unlocked');
+        })
+        .catch(() => {});
+    };
+    document.addEventListener('click', unlock, { once: true });
+    document.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+  }, []);
 
   // Sync volume to audio element
   useEffect(() => {
@@ -143,9 +168,46 @@ const Game: React.FC = () => {
       setLastResult(null);
 
       // Play audio
+      console.log('[Game] round-start received, songUrl:', data.songUrl);
       if (audioRef.current && data.songUrl) {
-        audioRef.current.src = data.songUrl;
-        audioRef.current.play().catch(() => {});
+        setAudioError(null);
+        const audio = audioRef.current;
+        audio.src = data.songUrl;
+        audio.load();
+
+        const tryPlay = () => {
+          audio.play().catch((err) => {
+            console.error('Audio playback failed:', err.name, err.message);
+            if (err.name === 'NotAllowedError') {
+              setAudioError('Click anywhere on the page to enable audio.');
+              // Retry once after user interaction
+              const retryPlay = () => {
+                audio.play().catch(() => {});
+                document.removeEventListener('click', retryPlay);
+              };
+              document.addEventListener('click', retryPlay, { once: true });
+            } else {
+              setAudioError('Failed to play audio. The preview URL may be unavailable.');
+            }
+          });
+        };
+
+        // If audio is already loaded enough, play immediately; otherwise wait
+        if (audio.readyState >= 3) {
+          tryPlay();
+        } else {
+          audio.addEventListener('canplay', tryPlay, { once: true });
+          // Timeout fallback in case canplay never fires (bad URL)
+          setTimeout(() => {
+            if (audio.readyState < 3) {
+              console.warn('[Game] Audio never became ready, URL may be invalid');
+              setAudioError('Audio failed to load. The song URL may have expired.');
+            }
+          }, 5000);
+        }
+      } else {
+        console.warn('[Game] No songUrl received or no audio element');
+        setAudioError('No audio URL received from server. Is the database seeded?');
       }
 
     };
@@ -234,7 +296,7 @@ const Game: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
       {/* Hidden audio element */}
-      <audio ref={audioRef} />
+      <audio ref={audioRef} preload="auto" />
 
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -460,6 +522,10 @@ const Game: React.FC = () => {
 
       <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)}>
         <Alert severity="success" onClose={() => setCopied(false)}>Room code copied!</Alert>
+      </Snackbar>
+
+      <Snackbar open={!!audioError} autoHideDuration={6000} onClose={() => setAudioError(null)}>
+        <Alert severity="warning" onClose={() => setAudioError(null)}>{audioError}</Alert>
       </Snackbar>
     </Box>
   );

@@ -74,6 +74,7 @@ const Game: React.FC = () => {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioUnlocked = useRef(false);
+  const guessInputRef = useRef<HTMLInputElement>(null);
   // The server assigns its own room code; store it here so all emits use it.
   const roomCodeRef = useRef<string>(code || '');
 
